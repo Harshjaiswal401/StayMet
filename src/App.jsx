@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import FilterSidebar from './components/FilterSidebar';
 import PropertyGrid from './components/PropertyGrid';
+import ExpenseDashboard from './components/ExpenseDashboard';
 import propertiesData from './data/dummyProperties.json';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('Discovery');
   const [filters, setFilters] = useState({
     categories: [],
     roomType: '',
@@ -65,45 +67,65 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
-      {/* Navbar (Mocked) */}
+      {/* Navbar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-primary-600 font-bold text-xl tracking-tight">
+          <div className="flex items-center gap-2 text-primary-600 font-bold text-xl tracking-tight cursor-pointer" onClick={() => setActiveTab('Discovery')}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
             StayMate
           </div>
           <div className="flex gap-4 text-sm font-medium text-gray-600">
-            <button className="text-primary-600 border-b-2 border-primary-600 pb-1">Discovery</button>
-            <button className="hover:text-primary-600 transition-colors">AI Match</button>
-            <button className="hover:text-primary-600 transition-colors">Finance</button>
+            <button 
+              onClick={() => setActiveTab('Discovery')}
+              className={`transition-colors ${activeTab === 'Discovery' ? 'text-primary-600 border-b-2 border-primary-600 pb-1' : 'hover:text-primary-600'}`}>
+              Discovery
+            </button>
+            <button 
+              onClick={() => setActiveTab('AI Match')}
+              className={`transition-colors ${activeTab === 'AI Match' ? 'text-primary-600 border-b-2 border-primary-600 pb-1' : 'hover:text-primary-600'}`}>
+              AI Match
+            </button>
+            <button 
+              onClick={() => setActiveTab('Finance')}
+              className={`transition-colors ${activeTab === 'Finance' ? 'text-primary-600 border-b-2 border-primary-600 pb-1' : 'hover:text-primary-600'}`}>
+              Finance
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Main Layout */}
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
-        
-        {/* Sidebar */}
-        <aside className="w-full md:w-72 flex-shrink-0">
-          <FilterSidebar 
-            filters={filters} 
-            onChange={handleFilterChange} 
-            onClear={handleClearFilters} 
-          />
-        </aside>
+      {activeTab === 'Finance' ? (
+        <ExpenseDashboard />
+      ) : activeTab === 'Discovery' ? (
+        <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
+          {/* Sidebar */}
+          <aside className="w-full md:w-72 flex-shrink-0">
+            <FilterSidebar 
+              filters={filters} 
+              onChange={handleFilterChange} 
+              onClear={handleClearFilters} 
+            />
+          </aside>
 
-        {/* Content */}
-        <main className="flex-1">
-          <div className="mb-6 flex justify-between items-end">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Find Your Perfect Stay</h1>
-              <p className="text-gray-500 text-sm mt-1">Showing {filteredProperties.length} properties</p>
+          {/* Content */}
+          <main className="flex-1">
+            <div className="mb-6 flex justify-between items-end">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Find Your Perfect Stay</h1>
+                <p className="text-gray-500 text-sm mt-1">Showing {filteredProperties.length} properties</p>
+              </div>
             </div>
-          </div>
-          
-          <PropertyGrid properties={filteredProperties} />
-        </main>
-      </div>
+            
+            <PropertyGrid properties={filteredProperties} />
+          </main>
+        </div>
+      ) : (
+        <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col justify-center items-center text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">AI Match</h1>
+          <p className="text-gray-500 max-w-lg">Our AI Matchmaking feature is coming soon! You'll be able to find the perfect roommate based on your lifestyle preferences.</p>
+        </div>
+      )}
     </div>
   );
 }
