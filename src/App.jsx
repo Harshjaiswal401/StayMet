@@ -10,7 +10,9 @@ import AIChatbot from './components/AIChatbot';
 import PropertyComparator from './components/PropertyComparator';
 import AuthModal from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
-import propertiesData from './data/dummyProperties.json';
+import { getAllProperties } from './firebase/firestore';
+import { seedPropertiesIfEmpty } from './utils/seedDatabase';
+import localPropertiesData from './data/dummyProperties.json';
 
 function App() {
   const { user, profile, favorites, toggleFavorite, signOut, firebaseError } = useAuth();
@@ -23,6 +25,35 @@ function App() {
   const [isComparing, setIsComparing]       = useState(false);
   const [showAuthModal, setShowAuthModal]   = useState(false);
   const [showUserMenu, setShowUserMenu]     = useState(false);
+  
+  // Real-time Database State
+  const [propertiesData, setPropertiesData] = useState([]);
+  const [isDataLoading, setIsDataLoading]   = useState(true);
+
+  // Initialize DB & Fetch Properties
+  useEffect(() => {
+    let mounted = true;
+    async function initDB() {
+      try {
+        await seedPropertiesIfEmpty();
+        const data = await getAllProperties();
+        if (mounted) {
+          if (data && data.length > 0) {
+            setPropertiesData(data);
+          } else {
+            setPropertiesData(localPropertiesData);
+          }
+        }
+      } catch (e) {
+        console.error("Database connection error. Using local fallback.", e);
+        if (mounted) setPropertiesData(localPropertiesData);
+      } finally {
+        if (mounted) setIsDataLoading(false);
+      }
+    }
+    initDB();
+    return () => { mounted = false; };
+  }, []);
 
   // Dark mode
   const [darkMode, setDarkMode] = useState(() =>
@@ -227,7 +258,13 @@ function App() {
       )}
 
       {/* ── Main Content ──────────────────────────────────────── */}
-      {isBooking ? (
+      {isDataLoading ? (
+        <div className="flex-1 flex flex-col items-center justify-center py-32 animate-fade-in">
+          <div className="w-16 h-16 border-4 border-gray-200 dark:border-gray-800 border-t-primary-600 rounded-full animate-spin mb-6"></div>
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white tracking-tight">Syncing Database</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium text-sm">Fetching real-time properties from Firebase...</p>
+        </div>
+      ) : isBooking ? (
         <BookingPage
           property={bookingProperty}
           onBack={() => setIsBooking(false)}

@@ -66,7 +66,8 @@ export const AuthProvider = ({ children }) => {
     try {
       await loginWithEmail(email, password);
     } catch (err) {
-      setAuthError(getFriendlyError(err.code));
+      console.error("Firebase Login Error:", err);
+      setAuthError(getFriendlyError(err.code) + ` (${err.code})`);
       throw err;
     }
   };
@@ -82,7 +83,8 @@ export const AuthProvider = ({ children }) => {
         photoURL:    result.user.photoURL,
       });
     } catch (err) {
-      setAuthError(getFriendlyError(err.code));
+      console.error("Firebase Google Auth Error:", err);
+      setAuthError(getFriendlyError(err.code) + ` (${err.code})`);
       throw err;
     }
   };
@@ -97,7 +99,8 @@ export const AuthProvider = ({ children }) => {
         photoURL: null,
       });
     } catch (err) {
-      setAuthError(getFriendlyError(err.code));
+      console.error("Firebase Signup Error:", err);
+      setAuthError(getFriendlyError(err.code) + ` (${err.code})`);
       throw err;
     }
   };

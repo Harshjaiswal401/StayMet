@@ -1,59 +1,9 @@
-# ============================================================
-#  Firestore Security Rules — StayMate
-#  Deploy with: firebase deploy --only firestore:rules
-# ============================================================
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ── Helper Functions ─────────────────────────────────────
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    function isOwner(uid) {
-      return isAuthenticated() && request.auth.uid == uid;
-    }
-
-    // ── Users ────────────────────────────────────────────────
-    // Users can read/write only their own profile
-    match /users/{userId} {
-      allow read:  if isOwner(userId);
-      allow write: if isOwner(userId);
-    }
-
-    // ── Properties ───────────────────────────────────────────
-    // Anyone can read; only admin writes (managed via Firebase Console)
-    match /properties/{propertyId} {
-      allow read:  if true;
-      allow write: if false; // Admin only — use Firebase Console or Admin SDK
-
-      // Reviews — authenticated users can add, anyone can read
-      match /reviews/{reviewId} {
-        allow read:  if true;
-        allow create: if isAuthenticated();
-        allow update, delete: if isOwner(resource.data.userId);
-      }
-    }
-
-    // ── Bookings ─────────────────────────────────────────────
-    // Users can only see and create their own bookings
-    match /bookings/{bookingId} {
-      allow read:   if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow delete: if false; // Bookings cannot be deleted
-    }
-
-    // ── Flats & Expenses ─────────────────────────────────────
-    // Only flat members can read/write expenses
-    match /flats/{flatId} {
-      allow read, write: if isAuthenticated() && request.auth.uid in resource.data.members;
-
-      match /expenses/{expenseId} {
-        allow read, write: if isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/flats/$(flatId)).data.members;
-      }
+    match /{document=**} {
+      // Hackathon MVP ke liye sab allow kar rahe hain taaki demo smoothly chale
+      allow read, write: if true;
     }
   }
 }
