@@ -9,6 +9,8 @@ import BookingPage from './components/BookingPage';
 import AIChatbot from './components/AIChatbot';
 import PropertyComparator from './components/PropertyComparator';
 import AuthModal from './components/AuthModal';
+import Marketplace from './components/Marketplace';
+import WaterService from './components/WaterService';
 import { useAuth } from './context/AuthContext';
 import { getAllProperties } from './firebase/firestore';
 import { seedPropertiesIfEmpty } from './utils/seedDatabase';
@@ -170,7 +172,7 @@ function App() {
 
           {/* Nav Tabs */}
           <div className="hidden sm:flex gap-5 text-sm font-medium text-gray-600 dark:text-gray-400">
-            {['Discovery', 'AI Match', 'Saved', 'Finance'].map(tab => (
+            {['Discovery', 'AI Match', 'Saved', 'Finance', 'Marketplace', 'Water'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -266,6 +268,10 @@ function App() {
         <div className="flex-1 w-full py-8">
           <RoommateForm />
         </div>
+      ) : activeTab === 'Marketplace' ? (
+        <Marketplace />
+      ) : activeTab === 'Water' ? (
+        <WaterService />
       ) : (
         <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col md:flex-row gap-8">
           {activeTab === 'Discovery' && (
