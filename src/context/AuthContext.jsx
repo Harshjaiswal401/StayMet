@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
+  isFirebaseConfigured,
   onAuthChange,
   loginWithEmail,
   loginWithGoogle,
@@ -25,24 +26,38 @@ export const AuthProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);     // property IDs
   const [loading, setLoading]     = useState(true);
   const [authError, setAuthError] = useState('');
+  const [firebaseError, setFirebaseError] = useState('');
 
   // Listen to Firebase Auth state
   useEffect(() => {
-    const unsubscribe = onAuthChange(async (firebaseUser) => {
-      if (firebaseUser) {
-        setUser(firebaseUser);
-        // Fetch Firestore profile
-        const prof = await getUserProfile(firebaseUser.uid);
-        setProfile(prof);
-        setFavorites(prof?.favorites || []);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setFavorites([]);
-      }
+    if (!isFirebaseConfigured) {
+      setFirebaseError(
+        'Firebase is not configured. Copy .env.example to .env and add valid Firebase credentials.'
+      );
       setLoading(false);
-    });
-    return unsubscribe;
+      return;
+    }
+
+    try {
+      const unsubscribe = onAuthChange(async (firebaseUser) => {
+        if (firebaseUser) {
+          setUser(firebaseUser);
+          // Fetch Firestore profile
+          const prof = await getUserProfile(firebaseUser.uid);
+          setProfile(prof);
+          setFavorites(prof?.favorites || []);
+        } else {
+          setUser(null);
+          setProfile(null);
+          setFavorites([]);
+        }
+        setLoading(false);
+      });
+      return unsubscribe;
+    } catch (err) {
+      setFirebaseError(err.message);
+      setLoading(false);
+    }
   }, []);
 
   // ── Auth Actions ────────────────────────────────────────────
@@ -121,6 +136,7 @@ export const AuthProvider = ({ children }) => {
     favorites,
     loading,
     authError,
+    firebaseError,
     setAuthError,
     signInWithEmail,
     signInWithGoogle,

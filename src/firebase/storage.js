@@ -10,9 +10,18 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
-import app from './config';
+import app, { isFirebaseConfigured } from './config';
 
-export const storage = getStorage(app);
+export const storage = app ? getStorage(app) : null;
+
+const getStorageInstance = () => {
+  if (!isFirebaseConfigured || !storage) {
+    throw new Error(
+      'Firebase Storage is not configured. Copy .env.example to .env and provide valid Firebase credentials.'
+    );
+  }
+  return storage;
+};
 
 // ─────────────────────────────────────────────────────────────
 //  GENERIC UPLOAD (with progress callback)
@@ -27,7 +36,7 @@ export const storage = getStorage(app);
  */
 export const uploadFile = (path, file, onProgress) => {
   return new Promise((resolve, reject) => {
-    const storageRef = ref(storage, path);
+const storageRef = ref(getStorageInstance(), path);
     const task = uploadBytesResumable(storageRef, file);
 
     task.on(
@@ -71,4 +80,4 @@ export const uploadIdProof = (uid, file, onProgress) =>
 // ─────────────────────────────────────────────────────────────
 
 export const deleteFile = (path) =>
-  deleteObject(ref(storage, path));
+  deleteObject(ref(getStorageInstance(), path));

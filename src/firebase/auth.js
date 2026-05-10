@@ -13,13 +13,23 @@ import {
   updateProfile,
   sendPasswordResetEmail,
 } from 'firebase/auth';
-import app from './config';
+import app, { isFirebaseConfigured } from './config';
 
-export const auth = getAuth(app);
+export const auth = app ? getAuth(app) : null;
 export const googleProvider = new GoogleAuthProvider();
+export { isFirebaseConfigured };
+
+const ensureAuth = () => {
+  if (!isFirebaseConfigured || !auth) {
+    throw new Error(
+      'Firebase Authentication is not configured. Copy .env.example to .env and provide valid Firebase credentials.'
+    );
+  }
+};
 
 // ── Register with Email & Password ──────────────────────────
 export const registerWithEmail = async (email, password, displayName) => {
+  ensureAuth();
   const userCred = await createUserWithEmailAndPassword(auth, email, password);
   if (displayName) {
     await updateProfile(userCred.user, { displayName });
@@ -28,21 +38,32 @@ export const registerWithEmail = async (email, password, displayName) => {
 };
 
 // ── Login with Email & Password ──────────────────────────────
-export const loginWithEmail = (email, password) =>
-  signInWithEmailAndPassword(auth, email, password);
+export const loginWithEmail = (email, password) => {
+  ensureAuth();
+  return signInWithEmailAndPassword(auth, email, password);
+};
 
 // ── Login with Google Popup ──────────────────────────────────
-export const loginWithGoogle = () =>
-  signInWithPopup(auth, googleProvider);
+export const loginWithGoogle = () => {
+  ensureAuth();
+  return signInWithPopup(auth, googleProvider);
+};
 
 // ── Sign Out ─────────────────────────────────────────────────
-export const logout = () => signOut(auth);
+export const logout = () => {
+  ensureAuth();
+  return signOut(auth);
+};
 
 // ── Password Reset ───────────────────────────────────────────
-export const resetPassword = (email) =>
-  sendPasswordResetEmail(auth, email);
+export const resetPassword = (email) => {
+  ensureAuth();
+  return sendPasswordResetEmail(auth, email);
+};
 
 // ── Auth State Listener ──────────────────────────────────────
 // Usage: const unsubscribe = onAuthChange(user => setUser(user))
-export const onAuthChange = (callback) =>
-  onAuthStateChanged(auth, callback);
+export const onAuthChange = (callback) => {
+  ensureAuth();
+  return onAuthStateChanged(auth, callback);
+};
