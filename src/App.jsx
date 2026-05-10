@@ -15,7 +15,7 @@ import { seedPropertiesIfEmpty } from './utils/seedDatabase';
 import localPropertiesData from './data/dummyProperties.json';
 
 function App() {
-  const { user, profile, favorites, toggleFavorite, signOut, firebaseError } = useAuth();
+  const { user, profile, favorites, toggleFavorite, signOut } = useAuth();
 
   const [activeTab, setActiveTab]           = useState('Discovery');
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -246,16 +246,6 @@ function App() {
         </div>
       </nav>
 
-      {firebaseError && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-          <div className="rounded-2xl border border-red-200 bg-red-50 dark:border-red-700 dark:bg-red-950/80 p-4 text-sm text-red-900 dark:text-red-100">
-            <strong className="font-bold">Firebase configuration missing:</strong>
-            <p className="mt-1">
-              {firebaseError} The app will still render, but authentication and Firestore features require valid Firebase keys.
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* ── Main Content ──────────────────────────────────────── */}
       {isDataLoading ? (

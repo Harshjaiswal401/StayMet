@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
-  isFirebaseConfigured,
   onAuthChange,
   loginWithEmail,
   loginWithGoogle,
@@ -21,53 +20,43 @@ export const useAuth = () => {
 
 // ── Provider ─────────────────────────────────────────────────
 export const AuthProvider = ({ children }) => {
-  const [user, setUser]           = useState(null);   // Firebase Auth user
-  const [profile, setProfile]     = useState(null);   // Firestore user doc
-  const [favorites, setFavorites] = useState([]);     // property IDs
+  const [user, setUser]           = useState(null);
+  const [profile, setProfile]     = useState(null);
+  const [favorites, setFavorites] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [authError, setAuthError] = useState('');
-  const [firebaseError, setFirebaseError] = useState('');
 
-  // Listen to Firebase Auth state
+  // ── Listen to Firebase Auth state ───────────────────────────
   useEffect(() => {
-    if (!isFirebaseConfigured) {
-      setFirebaseError(
-        'Firebase is not configured. Copy .env.example to .env and add valid Firebase credentials.'
-      );
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const unsubscribe = onAuthChange(async (firebaseUser) => {
-        if (firebaseUser) {
-          setUser(firebaseUser);
-          // Fetch Firestore profile
+    const unsubscribe = onAuthChange(async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        try {
           const prof = await getUserProfile(firebaseUser.uid);
           setProfile(prof);
           setFavorites(prof?.favorites || []);
-        } else {
-          setUser(null);
-          setProfile(null);
-          setFavorites([]);
+        } catch (e) {
+          console.error('Error fetching user profile:', e);
         }
-        setLoading(false);
-      });
-      return unsubscribe;
-    } catch (err) {
-      setFirebaseError(err.message);
+      } else {
+        setUser(null);
+        setProfile(null);
+        setFavorites([]);
+      }
       setLoading(false);
-    }
+    });
+    return unsubscribe;
   }, []);
 
-  // ── Auth Actions ────────────────────────────────────────────
+  // ── Auth Actions ─────────────────────────────────────────────
+
   const signInWithEmail = async (email, password) => {
     setAuthError('');
     try {
       await loginWithEmail(email, password);
     } catch (err) {
-      console.error("Firebase Login Error:", err);
-      setAuthError(getFriendlyError(err.code) + ` (${err.code})`);
+      console.error('Login error:', err);
+      setAuthError(getFriendlyError(err.code));
       throw err;
     }
   };
@@ -76,15 +65,14 @@ export const AuthProvider = ({ children }) => {
     setAuthError('');
     try {
       const result = await loginWithGoogle();
-      // Auto-create profile for new Google users
       await createUserProfile(result.user.uid, {
         displayName: result.user.displayName,
         email:       result.user.email,
         photoURL:    result.user.photoURL,
       });
     } catch (err) {
-      console.error("Firebase Google Auth Error:", err);
-      setAuthError(getFriendlyError(err.code) + ` (${err.code})`);
+      console.error('Google sign-in error:', err);
+      setAuthError(getFriendlyError(err.code));
       throw err;
     }
   };
@@ -99,8 +87,8 @@ export const AuthProvider = ({ children }) => {
         photoURL: null,
       });
     } catch (err) {
-      console.error("Firebase Signup Error:", err);
-      setAuthError(getFriendlyError(err.code) + ` (${err.code})`);
+      console.error('Signup error:', err);
+      setAuthError(getFriendlyError(err.code));
       throw err;
     }
   };
@@ -109,9 +97,9 @@ export const AuthProvider = ({ children }) => {
     await logout();
   };
 
-  // ── Favorites ───────────────────────────────────────────────
+  // ── Favorites ─────────────────────────────────────────────────
   const toggleFavorite = async (propertyId) => {
-    if (!user) return; // Must be logged in
+    if (!user) return;
 
     const isFav = favorites.includes(propertyId);
     // Optimistic update
@@ -125,7 +113,8 @@ export const AuthProvider = ({ children }) => {
       } else {
         await addFavorite(user.uid, propertyId);
       }
-    } catch {
+    } catch (e) {
+      console.error('Favorite toggle error:', e);
       // Revert on error
       setFavorites(prev =>
         isFav ? [...prev, propertyId] : prev.filter(id => id !== propertyId)
@@ -139,7 +128,7 @@ export const AuthProvider = ({ children }) => {
     favorites,
     loading,
     authError,
-    firebaseError,
+    firebaseError: null, // Kept for backwards compat — no longer needed
     setAuthError,
     signInWithEmail,
     signInWithGoogle,
@@ -155,7 +144,7 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// ── Friendly Firebase Error Messages ────────────────────────
+// ── Friendly Firebase Error Messages ─────────────────────────
 function getFriendlyError(code) {
   switch (code) {
     case 'auth/user-not-found':
@@ -171,7 +160,9 @@ function getFriendlyError(code) {
     case 'auth/popup-closed-by-user':
       return 'Google sign-in was cancelled.';
     case 'auth/network-request-failed':
-      return 'Network error. Check your connection.';
+      return 'Network error. Check your internet connection.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a moment and try again.';
     default:
       return 'Something went wrong. Please try again.';
   }

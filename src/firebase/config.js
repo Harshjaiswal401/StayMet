@@ -1,41 +1,30 @@
 // ============================================================
 //  Firebase Configuration — StayMate
-//  All values are injected from .env (never hardcode secrets!)
-//  Rename .env.example → .env and fill in your Firebase keys.
+//  Uses .env vars first; falls back to project defaults so the
+//  app always boots even before Vercel env vars are set.
 // ============================================================
 
 import { initializeApp, getApps, getApp } from 'firebase/app';
 
-const requiredConfig = {
-  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId:             import.meta.env.VITE_FIREBASE_APP_ID,
+// ── Firebase project credentials ────────────────────────────
+// VITE_ env vars are injected at build-time by Vite.
+// Fallbacks = your actual Firebase project values (safe to
+// include for a public web app — API keys are not secrets).
+const firebaseConfig = {
+  apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || 'AIzaSyBiRfDJxiGtfF7Q5HkAM8zFkNcDS-iBspw',
+  authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'staymate-734a0.firebaseapp.com',
+  projectId:         import.meta.env.VITE_FIREBASE_PROJECT_ID         || 'staymate-734a0',
+  storageBucket:     import.meta.env.VITE_FIREBASE_STORAGE_BUCKET     || 'staymate-734a0.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID|| '64859432343',
+  appId:             import.meta.env.VITE_FIREBASE_APP_ID             || '1:64859432343:web:88d31c9265df9f399b90d2',
+  measurementId:     import.meta.env.VITE_FIREBASE_MEASUREMENT_ID     || 'G-PR4FBH4FN5',
 };
 
-const isValid = (value) =>
-  typeof value === 'string' && value.trim() !== '' && !/^your[_-]/i.test(value);
+// Always initialized — no more "not configured" guard
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
-export const isFirebaseConfigured = Object.values(requiredConfig).every(isValid);
-
-export const firebaseConfig = {
-  ...requiredConfig,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || undefined,
-};
-
-// Prevent duplicate Firebase initialization (hot-reload safe)
-const app = isFirebaseConfigured
-  ? getApps().length === 0
-    ? initializeApp(firebaseConfig)
-    : getApp()
-  : null;
-
-if (!isFirebaseConfigured && import.meta.env.DEV) {
-  console.warn(
-    'Firebase is not configured. Copy .env.example to .env and fill in your Firebase credentials.'
-  );
-}
+// isFirebaseConfigured is always true now (kept for compatibility)
+export const isFirebaseConfigured = true;
+export const firebaseConfigValues = firebaseConfig;
 
 export default app;
